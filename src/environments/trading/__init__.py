@@ -6,7 +6,6 @@ from gymnasium.core import RenderFrame
 
 
 SATOSHI: Final[np.int32] = 100_000_000
-INITIAL_BALANCE: Final[np.int32] = 10_000
 
 
 class TradingEnv(gym.Env):
@@ -15,7 +14,12 @@ class TradingEnv(gym.Env):
     Define the render modes enabled for the environment
     """
 
-    balance: np.float32 = INITIAL_BALANCE
+    initial_balance: np.float32 = 10_000
+    """
+    Initial balance used for resets
+    """
+
+    balance: np.float32 = initial_balance
     """
     Current balance in USDT
     """
@@ -105,7 +109,7 @@ class TradingEnv(gym.Env):
             # Liquidate remaining position
             self._sell()
 
-        self.profit = np.float32(self.net_worth - INITIAL_BALANCE)
+        self.profit = np.float32(self.net_worth - self.initial_balance)
         return (
             self._next_observation(),
             # The profit is playing the reward role here
@@ -134,7 +138,7 @@ class TradingEnv(gym.Env):
             self.position = 0
 
     def _reset_properties(self) -> None:
-        self.balance = INITIAL_BALANCE
+        self.balance = self.initial_balance
         self.position = 0
         self.current_step = 0
         self.done = False
