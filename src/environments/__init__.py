@@ -1,3 +1,3 @@
-from src.environments.trading import TradingEnv
+from environments.trading import TradingEnv, TransactionFees
 
-__all__ = ["TradingEnv"]
+__all__ = ["TradingEnv", "TransactionFees"]
