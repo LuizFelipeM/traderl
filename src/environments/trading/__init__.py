@@ -35,12 +35,12 @@ class TradingEnv(gym.Env):
 
     balance: np.float32 = initial_balance
     """
-    Current balance in USDT
+    Current balance in `USDT`
     """
 
     position: np.int32 = 0
     """
-    Current open position in :const:`SATOSHI` (equivalent to BTC / 100_000_000)
+    Current open position in :const:`SATOSHI` (equivalent to `BTC / 100_000_000`)
     """
 
     pnl: np.float32 = 0
@@ -78,21 +78,20 @@ class TradingEnv(gym.Env):
         self.observation_space = gym.spaces.Box(
             low=0, high=np.inf, shape=(6,), dtype=np.float32
         )
-        # self.observation_space = gym.spaces.Box(low=0, high=np.inf, shape=(len(data.columns),), dtype=np.float32)
 
     @property
-    def current_price(self) -> np.float32:
+    def current_series(self) -> pd.Series:
         """
-        Get the current close price
+        Get data of the current step
         """
-        return np.float32(self.data.iloc[self.current_step]["close"])
+        return self.data.iloc[self.current_step]
 
     @property
     def current_satoshi_price(self) -> np.float32:
         """
-        Converts the current close price to :const:`SATOSHI` equivalent
+        Get the current close price in :const:`SATOSHI`
         """
-        return np.float32(self.current_price / SATOSHI)
+        return np.float32(self.current_series["close"] / SATOSHI)
 
     @property
     def net_worth(self) -> np.float32:
@@ -143,7 +142,7 @@ class TradingEnv(gym.Env):
         self.pnl = np.float32(self.net_worth - self.initial_balance)
         return (
             self._next_observation(),
-            # The profit is playing the reward role here
+            # The pnl is playing the reward role here
             self.pnl,
             self.done,
             self._get_info(),
@@ -187,15 +186,14 @@ class TradingEnv(gym.Env):
             self.done = True
             return np.array([self.balance, self.position, 0, 0, 0, 0])
 
-        current_step = self.data.iloc[self.current_step]
         return np.array(
             [
                 self.balance,
                 self.position,
-                current_step["low"],
-                current_step["high"],
-                current_step["open"],
-                current_step["close"],
+                self.current_series["low"],
+                self.current_series["high"],
+                self.current_series["open"],
+                self.current_series["close"],
             ]
         )
 
