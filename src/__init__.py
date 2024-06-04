@@ -1,5 +1,5 @@
 import pandas as pd
-from src.environments import TradingEnv
+from environments import TradingEnv
 
 env = TradingEnv(pd.read_csv("BTCUSDT-1s-2023-01.csv"))
 
