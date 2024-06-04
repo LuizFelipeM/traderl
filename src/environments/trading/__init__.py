@@ -29,9 +29,9 @@ class TradingEnv(gym.Env):
     Current open position in :const:`SATOSHI` (equivalent to BTC / 100_000_000)
     """
 
-    profit: np.float32 = 0
+    pnl: np.float32 = 0
     """
-    Profit metric used as agent's reward
+    Profit and Loss metric used as agent's reward
     """
 
     current_step: np.int32 = 0
@@ -109,11 +109,11 @@ class TradingEnv(gym.Env):
             # Liquidate remaining position
             self._sell()
 
-        self.profit = np.float32(self.net_worth - self.initial_balance)
+        self.pnl = np.float32(self.net_worth - self.initial_balance)
         return (
             self._next_observation(),
             # The profit is playing the reward role here
-            self.profit,
+            self.pnl,
             self.done,
             self._get_info(),
         )
@@ -123,7 +123,7 @@ class TradingEnv(gym.Env):
             raise NotImplementedError(f"mode {mode} not implemented")
 
         print(
-            f"Step {self.current_step} - Balance: {self.balance} | Position: {self.position} | Profit: {self.profit}"
+            f"Step {self.current_step} - Balance: {self.balance} | Position: {self.position} | PNL: {self.pnl}"
         )
 
     def _buy(self) -> None:
