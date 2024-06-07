@@ -1,12 +1,14 @@
 import pandas as pd
-from environments import TradingEnv
+import gymnasium as gym
+from environments.trading import register_trading_env
 
-env = TradingEnv(pd.read_csv("BTCUSDT-1s-2023-01.csv"))
+register_trading_env()
 
-obs = env.reset()
-done = False
+data = pd.read_csv("BTCUSDT-1s-2023-01.csv")
+env = gym.vector.make("TradingEnv-v0", num_envs=2, data=data)
 
-while not done:
-    action = env.action_space.sample()
-    obs, reward, done, _ = env.step(action)
-    env.render()
+print(env.reset())
+
+action = env.action_space.sample()
+print(action)
+print(env.step(action))
