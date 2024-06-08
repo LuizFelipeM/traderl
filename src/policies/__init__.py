@@ -1,3 +1,3 @@
-from gradient_policy import GradientPolicy
+from policies.gradient_policy import GradientPolicy
 
 __all__ = ["GradientPolicy"]

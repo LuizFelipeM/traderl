@@ -23,10 +23,11 @@ class GradientPolicy(nn.Module):
 
         `hidden_size` is the Number of neurons of the policy's hidden layer
         """
+        super(GradientPolicy, self).__init__()
 
-        self.input_layer = nn.Linear(in_features, hidden_size)
-        self.hidden_layer = nn.Linear(hidden_size, hidden_size)
-        self.output_layer = nn.Linear(hidden_size, n_actions)
+        self.input_layer = nn.Linear(in_features.item(), hidden_size.item())
+        self.hidden_layer = nn.Linear(hidden_size.item(), hidden_size.item())
+        self.output_layer = nn.Linear(hidden_size.item(), n_actions.item())
 
         self.device = device
 
