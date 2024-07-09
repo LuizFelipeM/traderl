@@ -4,8 +4,12 @@ import random
 import torch
 import torch.nn as nn
 
+from collections import namedtuple
 from typing import Iterator
 from torch.utils.data import IterableDataset
+
+
+Transition = namedtuple("Transition", ["obs", "actions", "returns"])
 
 
 class ParallelLearningDataset(IterableDataset):
@@ -33,8 +37,8 @@ class ParallelLearningDataset(IterableDataset):
         for _ in range(self.steps_per_epoch):
             policy_actions: torch.Tensor = self.policy(self.obs)
             actions: np.ndarray = policy_actions.multinomial(1).cpu().numpy()
-            next_obs, reward, done, _, _ = self.env.step(actions.flatten())
-            transitions.append((self.obs, actions, reward, done))
+            next_obs, rewards, done, _, _ = self.env.step(actions.flatten())
+            transitions.append((self.obs, actions, rewards, done))
             self.obs = next_obs
 
         obs_batch, action_batch, reward_batch, done_batch = map(
@@ -45,7 +49,7 @@ class ParallelLearningDataset(IterableDataset):
             # this will convert list((obs, action, reward, done)) and produce (ndarray(obs), ndarray(action), ndarray(reward), ndarray(done))
         )
 
-        running_return: np.ndarray = np.zeros(self.env.num_envs, dtype=np.float32)
+        running_return: np.ndarray = np.zeros(self.env.num_envs, dtype=np.float64)
         return_batch: np.ndarray = np.zeros_like(reward_batch)
 
         for row in range(self.steps_per_epoch - 1, -1, -1):
@@ -63,4 +67,4 @@ class ParallelLearningDataset(IterableDataset):
         random.shuffle(idx)
 
         for i in idx:
-            yield obs_batch[i], action_batch[i], return_batch[i]
+            yield Transition(obs_batch[i], action_batch[i], return_batch[i])

@@ -1,34 +1,63 @@
-from typing import Iterator
-import pandas as pd
+from typing import Any, SupportsFloat
 import gymnasium as gym
+import numpy as np
+import os
+import pandas as pd
+import torch
 import torch.utils
 import torch.utils.data
-import torch
-import numpy as np
-
 import torch.utils.data.dataloader
 
+from agents import Reinforce
+from datasets import ParallelLearningDataset
 from environments.trading import register_trading_env
 from gymnasium.wrappers.record_episode_statistics import RecordEpisodeStatistics
 from gymnasium.wrappers.normalize import NormalizeObservation, NormalizeReward
 from policies.gradient_policy import GradientPolicy
 
-from datasets.parallel_learning_dataset import ParallelLearningDataset
 
 register_trading_env()
 
 
+class TorchEnvProcessor(gym.Wrapper):
+    def __init__(self, env: gym.Env):
+        super().__init__(env)
+
+    def reset(
+        self, *, seed: int | None = None, options: dict[str, Any] | None = None
+    ) -> tuple[Any, dict[str, Any]]:
+        obs, info = super().reset(seed=seed, options=options)
+        return torch.from_numpy(obs).float(), info
+
+    def step(
+        self, action: torch.Tensor
+    ) -> tuple[Any, SupportsFloat, bool, bool, dict[str, Any]]:
+        action = action.squeeze().numpy()
+        obs, reward, done, truncated, info = super().step(action)
+
+        obs = torch.from_numpy(obs).float()
+        reward = torch.from_numpy(reward).unsqueeze(1).float()
+        done = torch.from_numpy(done).unsqueeze(1)
+        truncated = torch.from_numpy(truncated).unsqueeze(1)
+
+        return obs, reward, done, truncated, info
+
+
 def create_env(env_name: str, num_envs: np.int32, **kwargs) -> gym.vector.VectorEnv:
-    env = gym.vector.make(env_name, num_envs=num_envs, **kwargs)
+    env = gym.vector.make(env_name, num_envs=num_envs.item(), **kwargs)
     env = RecordEpisodeStatistics(env)
     env = NormalizeObservation(env)
     env = NormalizeReward(env)
+    env = TorchEnvProcessor(env)
     return env
 
 
 data = pd.read_csv("BTCUSDT-1s-2023-01.csv")
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-env = create_env("TradingEnv-v0", num_envs=2, data=data)
+num_envs = np.int32(
+    torch.cuda.device_count() if torch.cuda.is_available() else os.cpu_count()
+)
+env = create_env("TradingEnv-v0", num_envs=np.int32(2), data=data)
 
 
 policy = GradientPolicy(
@@ -37,6 +66,18 @@ policy = GradientPolicy(
     device=device,
 )
 dataset = ParallelLearningDataset(env=env, policy=policy, steps_per_epoch=2, gamma=0.8)
+
+if __name__ == "__main__":
+    algo = Reinforce(
+        policy,
+        dataset,
+        create_env("TradingEnv-v0", num_envs=num_envs, data=data),
+        episodes=np.int32(10),
+        device=device,
+    )
+
+    algo.run()
+
 
 # print(env.reset())
 
