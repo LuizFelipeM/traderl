@@ -7,8 +7,9 @@ import torch
 import torch.utils
 import torch.utils.data
 import torch.utils.data.dataloader
+from torch import nn
 
-from agents import Reinforce
+from agents import Reinforce, AdvantageActorCritic
 from datasets import ParallelLearningDataset
 from environments.trading import register_trading_env
 from gymnasium.wrappers.record_episode_statistics import RecordEpisodeStatistics
@@ -65,6 +66,13 @@ policy = GradientPolicy(
     n_actions=np.int32(env.single_action_space.n),
     device=device,
 )
+critic = nn.Sequential(
+    nn.Linear(env.observation_space.shape[1], 128),
+    nn.ReLU(),
+    nn.Linear(128, 64),
+    nn.ReLU(),
+    nn.Linear(64, 1),
+)
 dataset = ParallelLearningDataset(env=env, policy=policy, steps_per_epoch=2, gamma=0.8)
 
 if __name__ == "__main__":
@@ -72,9 +80,17 @@ if __name__ == "__main__":
         policy,
         dataset,
         create_env("TradingEnv-v0", num_envs=num_envs, data=data),
-        episodes=np.int32(10),
+        episodes=np.int32(500),
         device=device,
     )
+    # algo = AdvantageActorCritic(
+    #     policy,
+    #     critic,
+    #     dataset,
+    #     create_env("TradingEnv-v0", num_envs=num_envs, data=data),
+    #     episodes=np.int32(500),
+    #     device=device,
+    # )
 
     algo.run()
 
