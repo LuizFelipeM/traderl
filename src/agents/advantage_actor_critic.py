@@ -26,7 +26,6 @@ class AdvantageActorCritic:
         self,
         policy: nn.Module,
         critic: nn.Module,
-        dataset: Dataset,
         env: gym.Env | gym.vector.VectorEnv,
         *,
         episodes=np.int32(200),
@@ -52,7 +51,6 @@ class AdvantageActorCritic:
         # Policy is consider the actor in this scenario
         self.policy = policy
         self.critic = critic
-        self.dataset = dataset
         self.episodes = episodes
         self.batch_size = batch_size
         self.alpha = alpha

@@ -16,7 +16,6 @@ class Reinforce:
     def __init__(
         self,
         policy: nn.Module,
-        dataset: Dataset,
         env: gym.Env | gym.vector.VectorEnv,
         *,
         episodes=np.int32(200),
@@ -29,7 +28,6 @@ class Reinforce:
         logger=SummaryWriter(),
     ) -> None:
         self.policy = policy
-        self.dataset = dataset
         self.env = env
         self.num_envs = 1 if self.env is gym.Env else self.env.num_envs
         self.episodes = episodes
