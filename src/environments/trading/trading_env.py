@@ -134,13 +134,13 @@ class TradingEnv(gym.Env):
             self.done = True
             self.truncated = self.current_step >= len(self.data)
 
-            # Liquidate remaining position
+            # Settle remaining position
             self._sell()
 
         self.pnl = np.float64(self.net_worth - self.initial_balance)
         return (
             self._next_observation(),
-            # The pnl is playing the reward role here
+            # The PnL is playing the reward role here
             self.pnl,
             self.done,
             self.truncated,
